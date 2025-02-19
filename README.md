@@ -11,13 +11,20 @@ local aimbotEnabled = true
 local fovVisible = true
 local aimPart = "Head" -- Padrão: Cabeça
 
+-- Função para buscar a melhor parte do corpo para mirar
 local function getBestAimPart(character)
-    if character:FindFirstChild("UpperTorso") then
-        return "UpperTorso"
-    elseif character:FindFirstChild("Torso") then
-        return "Torso"
-    elseif character:FindFirstChild("HumanoidRootPart") then
-        return "HumanoidRootPart"
+    if aimPart == "Head" then
+        if character:FindFirstChild("Head") then
+            return "Head"
+        end
+    elseif aimPart == "Torso" then
+        if character:FindFirstChild("UpperTorso") then
+            return "UpperTorso"
+        elseif character:FindFirstChild("Torso") then
+            return "Torso"
+        elseif character:FindFirstChild("HumanoidRootPart") then
+            return "HumanoidRootPart"
+        end
     end
     return nil
 end
@@ -41,7 +48,7 @@ local function getClosestTarget()
                 if not teamCheck or (player.Team ~= LocalPlayer.Team) then
                     local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character[bestPart].Position)
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - workspace.CurrentCamera.ViewportSize / 2).Magnitude
-                    
+
                     if onScreen and dist < closestDist and dist <= fov then
                         closestDist = dist
                         closestTarget = player
@@ -54,7 +61,7 @@ local function getClosestTarget()
 end
 
 local function aimAt(target)
-    if target and target.Character then
+    if aimbotEnabled and target and target.Character then
         local bestPart = getBestAimPart(target.Character)
         if bestPart and target.Character:FindFirstChild(bestPart) then
             local aimPosition = target.Character[bestPart].Position
@@ -148,26 +155,27 @@ ToggleFOVButton.MouseButton1Click:Connect(function()
 end)
 
 ChangeAimPartButton.MouseButton1Click:Connect(function()
-    aimPart = (aimPart == "Head") and "Auto" or "Head"
-    ChangeAimPartButton.Text = "Mira em: " .. ((aimPart == "Head") and "Cabeça" or "Peito")
+    if aimPart == "Head" then
+        aimPart = "Torso"
+        ChangeAimPartButton.Text = "Mira em: Peito"
+    else
+        aimPart = "Head"
+        ChangeAimPartButton.Text = "Mira em: Cabeça"
+    end
 end)
 
 FOVIncreaseButton.MouseButton1Click:Connect(function()
-    if fov < 250 then
-        fov = fov + 10
-        FOVring.Radius = fov
-        FOVLabel.Text = "Tamanho do FOV: " .. fov
-    end
+    fov = math.min(fov + 10, 250)
+    FOVLabel.Text = "Tamanho do FOV: " .. fov
 end)
 
 FOVDecreaseButton.MouseButton1Click:Connect(function()
-    if fov > 50 then
-        fov = fov - 10
-        FOVring.Radius = fov
-        FOVLabel.Text = "Tamanho do FOV: " .. fov
-    end
+    fov = math.max(fov - 10, 50)
+    FOVLabel.Text = "Tamanho do FOV: " .. fov
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = false
+    fovVisible = false
     ScreenGui:Destroy()
 end)
